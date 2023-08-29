@@ -1,5 +1,5 @@
 # Import the Flask, sqlite3, Werkzeug library
-from flask import Flask, render_template
+from flask import Flask, render_template, request, url_for, flash, redirect
 import sqlite3
 from werkzeug.exceptions import abort
 
@@ -20,6 +20,8 @@ def get_post(post_id):
 
 # Create the Flask instance and pass the Flask
 app = Flask(__name__)
+# Set a secret key
+app.config['SECRET_KEY'] = 'your secret key'
 
 # Default route added using a decorator, for view function 'index'
 # Landing page of my web application - index.html
@@ -35,6 +37,25 @@ def index():
 def post(post_id):
     post = get_post(post_id)
     return render_template('post.html', post=post)
+
+# View function that will render a template that shows a form
+# you can fill in to create a new blog post
+@app.route('/create', methods=('GET', 'POST'))
+def create():
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+
+        if not title:
+            flash('Title is required!')
+        else:
+            conn = get_db_connection()
+            conn.execute('INSERT INTO posts (title, content) VALUES (?, ?)', (title, content))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('index'))
+        
+    return render_template('create.html')
 
 # Start with flask web app, with debug as True
 if (__name__) == "__main__":
